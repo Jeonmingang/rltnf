@@ -57,79 +57,74 @@ public class PBCommand implements CommandExecutor, TabCompleter {
         return false;
     }
 
-    private String setExactMove(UUID uuid, int partySlot, int moveSlot, String moveName) {
+    private String setExactMove(java.util.UUID uuid, int partySlot, int moveSlot, String moveName) {
+    try {
+        if (partySlot < 1 || partySlot > 6) return "파티칸은 1~6";
+        if (moveSlot  < 1 || moveSlot  > 4) return "기술칸은 1~4";
+        if (moveName == null || moveName.trim().isEmpty()) return "기술명이 비었음";
+
+        // 1) Attack 클래스 획득
+        Class<?> attackCls = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.Attack");
+
+        // (선택) 유효성 확인
         try {
-            if (partySlot < 1 || partySlot > 6) return "파티칸은 1~6";
-            if (moveSlot  < 1 || moveSlot  > 4) return "기술칸은 1~4";
-
-            // 1) resolve Moves / ImmutableAttack for the given move name
-            Class<?> movesEnum = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.moves.Moves");
-            Class<?> immClass  = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
-
-            Object immAtk = null;
-            String key = moveName.trim().toUpperCase().replace(' ', '_').replace('-', '_');
-            try {
-                @SuppressWarnings("unchecked")
-                Object enumConst = Enum.valueOf((Class) movesEnum, key);
-                immAtk = immClass.getMethod("fromMove", movesEnum).invoke(null, enumConst);
-            } catch (Throwable ignore) {
-                try {
-                    Class<?> trEnum = Class.forName("com.pixelmonmod.pixelmon.enums.technicalmoves.Gen8TechnicalRecords");
-                    @SuppressWarnings("unchecked")
-                    Object trConst = Enum.valueOf((Class) trEnum, key);
-                    immAtk = immClass.getMethod("from", trEnum).invoke(null, trConst);
-                } catch (Throwable ignore2) { /* still null */ }
-            }
-            if (immAtk == null) return "기술을 찾을 수 없음: " + moveName;
-
-            // 2) get PlayerPartyStorage by UUID
-            Class<?> storageProxy = Class.forName("com.pixelmonmod.pixelmon.api.storage.StorageProxy");
-            Class<?> playerPartyStorage = Class.forName("com.pixelmonmod.pixelmon.api.storage.PlayerPartyStorage");
-            Method getPartyByUUID = null;
-            try {
-                getPartyByUUID = storageProxy.getMethod("getParty", UUID.class);
-            } catch (NoSuchMethodException nse) {
-                // fallback older signature might be (ServerPlayerEntity) - not used here
-            }
-            if (getPartyByUUID == null) return "StorageProxy.getParty(UUID) 없음";
-            Object party = getPartyByUUID.invoke(null, uuid);
-            if (party == null) return "파티 정보를 가져올 수 없음";
-
-            // 3) Get Pokemon in partySlot
-            Method get = playerPartyStorage.getMethod("get", int.class);
-            Object poke = get.invoke(party, partySlot - 1);
-            if (poke == null) return "해당 칸 포켓몬이 없음";
-
-            // 4) Get moveset and set specific slot (index moveSlot-1) to immAtk
-            Class<?> pokemonClass = Class.forName("com.pixelmonmod.pixelmon.api.pokemon.Pokemon");
-            Method getMoveset = pokemonClass.getMethod("getMoveset");
-            Object moveset = getMoveset.invoke(poke);
-
-            Method setMethod = null;
-            try {
-                setMethod = moveset.getClass().getMethod("set", int.class, immClass);
-            } catch (NoSuchMethodException e) {
-                // some versions accept Object
-                setMethod = moveset.getClass().getMethod("set", int.class, Object.class);
-            }
-            setMethod.invoke(moveset, moveSlot - 1, immAtk);
-
-            // 5) ensure client sync (call party.markDirty / sendParty to client if available)
-            try {
-                Method markDirty = party.getClass().getMethod("markDirty");
-                markDirty.invoke(party);
-            } catch (NoSuchMethodException ignored) {}
-            try {
-                Method send = party.getClass().getMethod("sendEntireParty", UUID.class);
-                send.invoke(party, uuid);
-            } catch (NoSuchMethodException ignored) {}
-
-            return null; // success
-        } catch (Throwable t) {
-            t.printStackTrace();
-            return t.getClass().getSimpleName() + ": " + t.getMessage();
+            java.lang.reflect.Method hasAttack = attackCls.getMethod("hasAttack", String.class);
+            boolean ok = (boolean) hasAttack.invoke(null, moveName);
+            if (!ok) return "알 수 없는 기술: " + moveName;
+        } catch (NoSuchMethodException ignore) {
+            // 일부 버전에선 없음 → 넘어감
         }
+
+        // 2) 새 Attack 생성 (Attack(String) 생성자 우선)
+        Object newAttack = null;
+        try {
+            java.lang.reflect.Constructor<?> c = attackCls.getConstructor(String.class);
+            newAttack = c.newInstance(moveName);
+        } catch (NoSuchMethodException e) {
+            // 다른 팩토리 존재 시 시도
+            try {
+                java.lang.reflect.Method factory = attackCls.getMethod("getAttack", String.class);
+                newAttack = factory.invoke(null, moveName);
+            } catch (NoSuchMethodException e2) {
+                return "기술 객체 생성 불가: " + moveName;
+            }
+        }
+
+        // 3) 파티 가져오기 (StorageProxy.getParty(UUID))
+        Class<?> storageProxy = Class.forName("com.pixelmonmod.pixelmon.api.storage.StorageProxy");
+        java.lang.reflect.Method getPartyByUUID = storageProxy.getMethod("getParty", java.util.UUID.class);
+        Object party = getPartyByUUID.invoke(null, uuid);
+        if (party == null) return "파티 정보를 가져올 수 없음";
+
+        // 4) 대상 포켓몬
+        java.lang.reflect.Method get = party.getClass().getMethod("get", int.class);
+        Object poke = get.invoke(party, partySlot - 1);
+        if (poke == null) return "해당 칸 포켓몬이 없음";
+
+        // 5) Moveset 꺼내서 정확 슬롯 교체
+        java.lang.reflect.Method getMoveset = poke.getClass().getMethod("getMoveset");
+        Object moveset = getMoveset.invoke(poke);
+
+        java.lang.reflect.Method setMethod = null;
+        try {
+            setMethod = moveset.getClass().getMethod("set", int.class, attackCls);
+        } catch (NoSuchMethodException e) {
+            // 타입 소거 대응
+            setMethod = moveset.getClass().getMethod("set", int.class, Object.class);
+        }
+        setMethod.invoke(moveset, moveSlot - 1, newAttack);
+
+        // 6) 동기화 (가능한 경우)
+        try { party.getClass().getMethod("markDirty").invoke(party); } catch (NoSuchMethodException ignored) {}
+        try { party.getClass().getMethod("sendEntireParty", java.util.UUID.class).invoke(party, uuid); } catch (NoSuchMethodException ignored) {}
+        try { moveset.getClass().getMethod("tryNotifyPokemon").invoke(moveset); } catch (NoSuchMethodException ignored) {}
+
+        return null;
+    } catch (Throwable t) {
+        t.printStackTrace();
+        return t.getClass().getSimpleName() + ": " + t.getMessage();
     }
+}
 
     private static int parseInt(String s, int d) {
         try { return Integer.parseInt(s); } catch (Exception e) { return d; }

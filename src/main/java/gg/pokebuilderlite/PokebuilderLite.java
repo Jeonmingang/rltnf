@@ -7,7 +7,7 @@ public class PokebuilderLite extends JavaPlugin {
     @Override
     public void onEnable() {
         PBCommand executor = new PBCommand(this);
-        PluginCommand cmd = this.getCommand("pb");
+        PluginCommand cmd = this.getCommand("pr");
         if (cmd != null) {
             cmd.setExecutor(executor);
             cmd.setTabCompleter(executor);

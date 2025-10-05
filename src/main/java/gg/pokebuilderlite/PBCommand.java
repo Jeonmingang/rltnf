@@ -24,9 +24,9 @@ public class PBCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("help")) {
-            sender.sendMessage("§a/pb setmove <partySlot 1-6> <moveSlot 1-4> <move name...>");
+            sender.sendMessage("§a/pr setmove <partySlot 1-6> <moveSlot 1-4> <move name...>");
             if (sender.hasPermission("pokebuilder.admin")) {
-                sender.sendMessage("§a/pb setmove <player> <partySlot> <moveSlot> <move name...>");
+                sender.sendMessage("§a/pr setmove <player> <partySlot> <moveSlot> <move name...>");
             }
             sender.sendMessage("§7지정 칸(1~4)에 정확히 교체합니다. (Pixelmon 9.1.13)");
             return true;
@@ -57,7 +57,7 @@ public class PBCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            sender.sendMessage("§c사용법: /pb setmove <party 1-6> <slot 1-4> <move>");
+            sender.sendMessage("§c사용법: /pr setmove <party 1-6> <slot 1-4> <move>");
             return true;
 
         } catch (Throwable t) {
@@ -98,11 +98,29 @@ public class PBCommand implements CommandExecutor, TabCompleter {
         Object moveset = getMoveset.invoke(pokemon);
         if (moveset == null) return "무브셋을 불러오지 못함.";
 
-        // 4) Attack 클래스 준비 + 유효성 검사
-        Class<?> attackCls = Class.forName("com.pixelmonmod.pixelmon.api.pokemon.stats.Attack");
-        Method hasAttack = attackCls.getMethod("hasAttack", String.class);
-        boolean exists = (boolean) hasAttack.invoke(null, moveName);
-        if (!exists) return "해당 기술이 존재하지 않음: " + moveName;
+        // 4) 공격 기술 유효성 검사 (Pixelmon 9.x) - Moves/ImmutableAttack 기반으로 대체
+Object immAtk = null;
+try {
+    // com.pixelmonmod.pixelmon.battles.attacks.moves.Moves -> enum 상수 생성
+    Class<?> movesEnum = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.moves.Moves");
+    // 이름 정규화: 공백/하이픈 -> 언더스코어, 대문자
+    String key = moveName.trim().toUpperCase().replace(' ', '_').replace('-', '_');
+    Object enumConst = java.lang.Enum.valueOf((Class) movesEnum, key);
+    Class<?> imm = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
+    immAtk = imm.getMethod("fromMove", movesEnum).invoke(null, enumConst);
+} catch (Throwable __ignore) { }
+if (immAtk == null) {
+    try {
+        // TR 이름도 지원 (일부 기술은 TR로만 매칭 가능)
+        Class<?> trEnum = Class.forName("com.pixelmonmod.pixelmon.enums.technicalmoves.Gen8TechnicalRecords");
+        String key = moveName.trim().toUpperCase().replace(' ', '_').replace('-', '_');
+        Object trConst = java.lang.Enum.valueOf((Class) trEnum, key);
+        Class<?> imm = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
+        immAtk = imm.getMethod("from", trEnum).invoke(null, trConst);
+    } catch (Throwable __ignore) { }
+}
+boolean exists = (immAtk != null);
+if (!exists) return "해당 기술이 존재하지 않음: " + moveName;
 
         Constructor<?> ctor = attackCls.getConstructor(String.class);
         Object newAttack = ctor.newInstance(moveName);

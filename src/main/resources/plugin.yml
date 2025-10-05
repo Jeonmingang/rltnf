@@ -1,11 +1,11 @@
 name: PokebuilderLite
 main: gg.pokebuilderlite.PokebuilderLite
-version: 1.0.0
+version: 1.1.0
 api-version: 1.16
 commands:
-  pb:
+  pr:
     description: precise move slot setter
-    usage: /pb setmove <party 1-6> <slot 1-4> <move>
+    usage: /pr setmove <party 1-6> <slot 1-4> <move>
 permissions:
   pokebuilder.admin:
     default: op

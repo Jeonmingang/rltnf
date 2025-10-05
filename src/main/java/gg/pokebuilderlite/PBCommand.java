@@ -106,8 +106,8 @@ try {
     // 이름 정규화: 공백/하이픈 -> 언더스코어, 대문자
     String key = moveName.trim().toUpperCase().replace(' ', '_').replace('-', '_');
     Object enumConst = java.lang.Enum.valueOf((Class) movesEnum, key);
-    Class<?> imm = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
-    immAtk = imm.getMethod("fromMove", movesEnum).invoke(null, enumConst);
+    Class<?> immClass = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
+    immAtk = immClass.getMethod("fromMove", movesEnum).invoke(null, enumConst);
 } catch (Throwable __ignore) { }
 if (immAtk == null) {
     try {
@@ -115,18 +115,16 @@ if (immAtk == null) {
         Class<?> trEnum = Class.forName("com.pixelmonmod.pixelmon.enums.technicalmoves.Gen8TechnicalRecords");
         String key = moveName.trim().toUpperCase().replace(' ', '_').replace('-', '_');
         Object trConst = java.lang.Enum.valueOf((Class) trEnum, key);
-        Class<?> imm = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
-        immAtk = imm.getMethod("from", trEnum).invoke(null, trConst);
+        Class<?> immClass2 = Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack");
+        immAtk = immClass2.getMethod("from", trEnum).invoke(null, trConst);
     } catch (Throwable __ignore) { }
 }
 boolean exists = (immAtk != null);
 if (!exists) return "해당 기술이 존재하지 않음: " + moveName;
 
-        Constructor<?> ctor = attackCls.getConstructor(String.class);
-        Object newAttack = ctor.newInstance(moveName);
-
-        // 5) 기존 칸에 set(index, Attack)
-        Method set = moveset.getClass().getMethod("set", int.class, attackCls);
+        Object newAttack = immAtk; // ImmutableAttack instance already prepared
+// 5) 기존 칸에 set(index, Attack)
+        Method set = moveset.getClass().getMethod("set", int.class, immClass != null ? immClass : Class.forName("com.pixelmonmod.pixelmon.battles.attacks.ImmutableAttack"));
         set.invoke(moveset, moveSlot - 1, newAttack);
 
         // 6) tryNotifyPokemon()로 갱신 통지 + PP 회복(선택)

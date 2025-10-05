@@ -1,0 +1,43 @@
+name: Build (PokebuilderLite)
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Temurin JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+
+      - name: Check Pixelmon jar (required)
+        run: |
+          mkdir -p libs
+          ls -al libs || true
+          if [ ! -f "libs/Pixelmon-1.16.5-9.1.13-universal.jar" ]; then
+            echo "::error title=Missing Pixelmon jar::Place Pixelmon-1.16.5-9.1.13-universal.jar in ./libs (Git LFS or private vendor)."
+            exit 1
+          fi
+
+      - name: Build with Maven
+        run: mvn -B -DskipTests=true package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pokebuilder-lite-${{ github.ref_name }}-${{ github.run_number }}
+          path: |
+            target/*pokebuilder*.jar
+            target/*-shaded.jar
+          if-no-files-found: error

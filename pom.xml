@@ -9,12 +9,11 @@
   <name>PokebuilderLite</name>
 
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>11</maven.compiler.source>   <!-- ❗ JDK 11 -->
+    <maven.compiler.target>11</maven.compiler.target>   <!-- ❗ JDK 11 -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <!-- ★ Spigot API는 이 리포지토리에서 받아야 함 -->
   <repositories>
     <repository>
       <id>spigot-repo</id>
@@ -25,7 +24,7 @@
   </repositories>
 
   <dependencies>
-    <!-- Spigot/Bukkit API (제공됨) -->
+    <!-- Spigot API 1.16.5 -->
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
@@ -33,7 +32,7 @@
       <scope>provided</scope>
     </dependency>
 
-    <!-- Pixelmon 1.16.5-9.1.13 (로컬 libs/ 경로 사용) -->
+    <!-- Pixelmon: 로컬 libs 경로 (LFS로 레포에 포함) -->
     <dependency>
       <groupId>com.pixelmonmod</groupId>
       <artifactId>pixelmon</artifactId>
@@ -41,8 +40,6 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/libs/Pixelmon-1.16.5-9.1.13-universal.jar</systemPath>
     </dependency>
-
-    <!-- ★ net.minecraft:server 는 공개 레포에 없어 컴파일 불필요 → 제거 -->
   </dependencies>
 
   <build>
@@ -52,8 +49,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>11</source>
+          <target>11</target>
         </configuration>
       </plugin>
 

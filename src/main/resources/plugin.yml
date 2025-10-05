@@ -1,0 +1,17 @@
+name: PokebuilderLite
+main: gg.pokebuilderlite.PokebuilderLite
+version: 1.0.0
+api-version: 1.16
+author: minkang
+commands:
+  pb:
+    description: Set a move into a specific slot for a Pokémon in your party.
+    usage: /pb setmove <partySlot 1-6> <moveSlot 1-4> <move name...>
+    aliases: [pokebuilder, pblite]
+permissions:
+  pokebuilder.use:
+    default: true
+    description: Use /pb for yourself
+  pokebuilder.admin:
+    default: op
+    description: Use /pb for other players

@@ -1,0 +1,74 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>gg.min-k</groupId>
+  <artifactId>pokebuilder-lite</artifactId>
+  <version>1.0.0</version>
+  <name>PokebuilderLite</name>
+  <properties>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+    <!-- Spigot API (provided) -->
+    <dependency>
+      <groupId>org.spigotmc</groupId>
+      <artifactId>spigot-api</artifactId>
+      <version>1.16.5-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Pixelmon 1.16.5 API (use system-scoped jar placed in libs) -->
+    <dependency>
+      <groupId>com.pixelmonmod</groupId>
+      <artifactId>pixelmon</artifactId>
+      <version>1.16.5-9.1.13</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/libs/Pixelmon-1.16.5-9.1.13-universal.jar</systemPath>
+    </dependency>
+    <!-- Minecraft/Forge types used by Pixelmon API -->
+    <dependency>
+      <groupId>net.minecraft</groupId>
+      <artifactId>server</artifactId>
+      <version>1.16.5</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.2.4</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+          </execution>
+        </executions>
+        <configuration>
+          <relocations>
+            <!-- prevent classpath conflicts if any utility is added later -->
+            <relocation>
+              <pattern>gg.pokebuilderlite.lib</pattern>
+              <shadedPattern>gg.pokebuilderlite.shaded</shadedPattern>
+            </relocation>
+          </relocations>
+          <createDependencyReducedPom>false</createDependencyReducedPom>
+          <minimizeJar>false</minimizeJar>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

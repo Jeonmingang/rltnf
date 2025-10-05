@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class PokebuilderLite extends JavaPlugin {
     @Override
     public void onEnable() {
-        PBCommand executor = new PBCommand(this);
+        PBCommand executor = new PBCommand();
         PluginCommand cmd = this.getCommand("pr");
         if (cmd != null) {
             cmd.setExecutor(executor);

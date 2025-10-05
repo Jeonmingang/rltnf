@@ -9,26 +9,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout
+      - name: Checkout (with Git LFS)
         uses: actions/checkout@v4
+        with:
+          lfs: true        # ❗ LFS 바이너리로 받기 (포인터 방지)
+          fetch-depth: 0
 
-      - name: Setup Temurin JDK 8
+      - name: Setup Temurin JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "8"
+          java-version: "11"
           cache: maven
 
-      - name: Check Pixelmon jar (required)
+      - name: Verify Pixelmon jar exists and is a real zip
         run: |
-          mkdir -p libs
           ls -al libs || true
-          if [ ! -f "libs/Pixelmon-1.16.5-9.1.13-universal.jar" ]; then
-            echo "::error title=Missing Pixelmon jar::Place Pixelmon-1.16.5-9.1.13-universal.jar in ./libs (Git LFS or private vendor)."
+          test -f "libs/Pixelmon-1.16.5-9.1.13-universal.jar"
+          # 포인터파일(수십 바이트)이면 실패시키자
+          BYTES=$(wc -c < libs/Pixelmon-1.16.5-9.1.13-universal.jar)
+          echo "jar size: $BYTES bytes"
+          if [ "$BYTES" -lt 1000000 ]; then
+            echo "::error ::Pixelmon jar looks like a Git LFS pointer. Ensure checkout uses LFS and the file is in the repo via LFS."
             exit 1
           fi
+          unzip -l libs/Pixelmon-1.16.5-9.1.13-universal.jar >/dev/null
 
       - name: Build with Maven
         run: mvn -B -DskipTests=true package
@@ -37,7 +46,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pokebuilder-lite-${{ github.ref_name }}-${{ github.run_number }}
-          path: |
-            target/*pokebuilder*.jar
-            target/*-shaded.jar
+          path: target/*.jar
           if-no-files-found: error

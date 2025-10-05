@@ -2,24 +2,38 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>gg.min-k</groupId>
   <artifactId>pokebuilder-lite</artifactId>
   <version>1.0.0</version>
   <name>PokebuilderLite</name>
+
   <properties>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <!-- ★ Spigot API는 이 리포지토리에서 받아야 함 -->
+  <repositories>
+    <repository>
+      <id>spigot-repo</id>
+      <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+      <releases><enabled>false</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>
+    </repository>
+  </repositories>
+
   <dependencies>
-    <!-- Spigot API (provided) -->
+    <!-- Spigot/Bukkit API (제공됨) -->
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.16.5-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
-    <!-- Pixelmon 1.16.5 API (use system-scoped jar placed in libs) -->
+
+    <!-- Pixelmon 1.16.5-9.1.13 (로컬 libs/ 경로 사용) -->
     <dependency>
       <groupId>com.pixelmonmod</groupId>
       <artifactId>pixelmon</artifactId>
@@ -27,15 +41,10 @@
       <scope>system</scope>
       <systemPath>${project.basedir}/libs/Pixelmon-1.16.5-9.1.13-universal.jar</systemPath>
     </dependency>
-    <!-- Minecraft/Forge types used by Pixelmon API -->
-    <dependency>
-      <groupId>net.minecraft</groupId>
-      <artifactId>server</artifactId>
-      <version>1.16.5</version>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
+
+    <!-- ★ net.minecraft:server 는 공개 레포에 없어 컴파일 불필요 → 제거 -->
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -47,6 +56,7 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -58,13 +68,6 @@
           </execution>
         </executions>
         <configuration>
-          <relocations>
-            <!-- prevent classpath conflicts if any utility is added later -->
-            <relocation>
-              <pattern>gg.pokebuilderlite.lib</pattern>
-              <shadedPattern>gg.pokebuilderlite.shaded</shadedPattern>
-            </relocation>
-          </relocations>
           <createDependencyReducedPom>false</createDependencyReducedPom>
           <minimizeJar>false</minimizeJar>
         </configuration>
